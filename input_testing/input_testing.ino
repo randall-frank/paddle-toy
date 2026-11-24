@@ -63,6 +63,10 @@ void setup() {
   EEPROM.get(0, zeroAngle0);
   EEPROM.get(2, zeroAngle1);
 
+  // In case the zero value was uninitialized, clamp it [0,1023]
+  zeroAngle0 = zeroAngle0 & 0x03ff;
+  zeroAngle1 = zeroAngle1 & 0x03ff;
+
   Serial.print("Zero Angle 0: ");
   Serial.print(zeroAngle0);
   Serial.print("| Zero Angle 1: ");
@@ -105,7 +109,14 @@ void loop() {
 
     Serial.print("Angle: ");
     Serial.print(lastAngle);
+    Serial.print(" | Value: ");
+    Serial.print(remap(lastAngle, zeroAngle0));
     Serial.print(" | Button: ");
     Serial.println(debouncedButtonState == LOW ? "PRESSED" : "RELEASED");
   }
+}
+
+// Apply the zero offset and wrap it around 12bits [0,1023]
+int remap(int sensor, int zero) {
+  return (sensor - zero) & 0x03ff;
 }
