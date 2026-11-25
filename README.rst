@@ -47,7 +47,7 @@ STL model (OpenSCAD):
 .. raw:: html
 
    <p align="center">
-      <a href="https://www.viewstl.com/embed/viewer/v2/?url=https%3A%2F%2Fraw.githubusercontent.com%2Frandall-frank%2Fpaddle-toy%2Frefs%2Fheads%2Fmain%2Fpaddletoy.stl" target="_blank" rel="noopener noreferrer">
+      <a href="http://3dviewer.net/#model=https://github.com/randall-frank/paddle-toy/blob/master/paddletoy.3mf" target="_blank" rel="noopener noreferrer">
          <img src="stl.png" style="width:600px; height:auto;">
       </a>
    </p>

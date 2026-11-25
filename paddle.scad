@@ -95,9 +95,9 @@ module as5600() {
     off = 1.75 + as_hole_dia*0.5;
     difference() {
         union() {
-            cube([as_width, as_length, as_thick], center=false);
+            color("#ffffff") cube([as_width, as_length, as_thick], center=false);
             translate([as_width/2, as_length/2, as_thick])
-                cube([5, 5, chip_thick+chip_thick], center=true);
+                color("#000000") cube([5, 5, chip_thick+chip_thick], center=true);
         }
         union() {
             translate([off, off, -eps*0.5])
@@ -113,10 +113,10 @@ module as5600() {
 }
 
 module mcu_micro_pro() {
-    cube([cpu_width, cpu_length, cpu_thick], center=false);
+    color("#00cc00") cube([cpu_width, cpu_length, cpu_thick], center=false);
     translate([cpu_width/2, cpu_length/2 - 3, as_thick])
        rotate(a=45,[0,0,1])
-          cube([7, 7, chip_thick+chip_thick], center=true);
+          color("#000000") cube([7, 7, chip_thick+chip_thick], center=true);
 }
 
 module caps(block=0) {
@@ -136,21 +136,23 @@ module caps(block=0) {
 }
 
 module cap(block=0) {
-    if (block) {
-        union() {
-            pie(cap_thick, core_dia*0.5, (bearing_dia+6)*0.5+5, 0, 180);
-            translate([0,0,cap_thick-eps]) 
-                pie(wall_thick, core_dia*0.5, (bearing_dia+6)*0.5, 45, 135);
+    color("#edbd5f") {
+        if (block) {
+            union() {
+                pie(cap_thick, core_dia*0.5, (bearing_dia+6)*0.5+5, 0, 180);
+                translate([0,0,cap_thick-eps]) 
+                    pie(wall_thick, core_dia*0.5, (bearing_dia+6)*0.5, 45, 135);
+            }
+        } else {
+            pie(cap_thick, core_dia*0.5, (bearing_dia+6)*0.5+5, 180, 360);
         }
-    } else {
-        pie(cap_thick, core_dia*0.5, (bearing_dia+6)*0.5+5, 180, 360);
     }
 }
 
 module top() {
     offset = box_width*0.5;
     difference() {
-        union() {
+        color("#edbd5f") union() {
             cube([box_width, box_length, wall_thick], center=false);
             translate([offset, offset, wall_thick]) 
                 cylinder(h=wall_thick, d=2*core_dia);
@@ -166,7 +168,7 @@ module top() {
 
 module base() {
     difference() {
-        cube([box_width, box_length, box_depth], center=false);
+        color("#edbd5f") cube([box_width, box_length, box_depth], center=false);
         union() {
             translate([wall_thick, wall_thick, wall_thick+eps]) {
                 cube([box_width-2*wall_thick, 
