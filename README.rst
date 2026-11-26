@@ -41,7 +41,6 @@ Rough device design:
      <img src="drawing.svg" style="width:600px; height:auto;">
    </p>
 
-
 STL model (OpenSCAD):
 
 .. raw:: html
@@ -51,7 +50,6 @@ STL model (OpenSCAD):
          <img src="stl.png" style="width:600px; height:auto;">
       </a>
    </p>
-
 
 Circuit:
 
@@ -66,7 +64,7 @@ Partlist
 - Arduino Micro Pro - 16Mhz ATmega32u4 
 - AS5600 Magnetic Encoder
 - Pushbutton - panel mount, momentary contact, normally open
-- Screws: 8 M2.5, 1 M3.5
+- Screws: 8 M3 6mm, 1 M3 10mm
 - Bearing: 16mm O.D., 5mm I.D.
 - Axel: 5mm dia, 15mm long
 - PLA filament

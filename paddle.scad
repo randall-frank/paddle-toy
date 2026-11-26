@@ -27,8 +27,6 @@
 quality = 200; // [10:200]
 
 /* [Common] */
-// Screw diameter (mm)
-screw_dia = 2.0;   
 // General EPS (mm)
 eps = 0.2; // Insets used for looser fits
 // Wall thicknesses (mm)
@@ -37,6 +35,10 @@ wall_thick = 5.0;
 chip_thick = 1.6;
 // Button hole diameter
 btn_hole_dia = 7.0;
+// M3 screw clean hole diameter (mm)
+m3_hole_dia = 3.3;
+// M3 screw thread hole diameter (mm)
+m3_thread_dia = 2.9;
 
 /* [Holding box] */
 // width (mm)
@@ -81,6 +83,20 @@ cap_thick = 3;
 /* [Hidden] */
 $fn = quality;
 
+// Use this to calibrate the M3 holes for a specific printer
+module M3_test_block() {
+    difference() {
+        cube([35,5,10],center=false);
+        union() {
+            translate([5,2.5,-1]) cylinder(h=12, d=2.5);
+            translate([10,2.5,-1]) cylinder(h=12, d=2.7);
+            translate([15,2.5,-1]) cylinder(h=12, d=2.9);
+            translate([20,2.5,-1]) cylinder(h=12, d=3.1);
+            translate([25,2.5,-1]) cylinder(h=12, d=3.3);
+            translate([30,2.5,-1]) cylinder(h=12, d=3.5);
+        }
+    }
+}
 
 module pie(t, r0, r1, a0, a1) {
     difference() {
@@ -91,6 +107,17 @@ module pie(t, r0, r1, a0, a1) {
     }
 }
 
+module as5600_holes(depth, dia, off) {
+    translate([off, off, 0])
+        cylinder(h=depth, d=dia);
+    translate([as_width-off, off, 0])
+        cylinder(h=depth, d=dia);
+    translate([off, as_length-off, 0])
+        cylinder(h=depth, d=dia);
+    translate([as_width-off, as_length-off, 0])
+        cylinder(h=depth, d=dia);
+}
+
 module as5600() {
     off = 1.75 + as_hole_dia*0.5;
     difference() {
@@ -99,16 +126,17 @@ module as5600() {
             translate([as_width/2, as_length/2, as_thick])
                 color("#000000") cube([5, 5, chip_thick+chip_thick], center=true);
         }
-        union() {
-            translate([off, off, -eps*0.5])
-                cylinder(h=as_thick+eps, d=as_hole_dia);
-            translate([as_width-off, off, -eps*0.5])
-                cylinder(h=as_thick+eps, d=as_hole_dia);
-            translate([off, as_length-off, -eps*0.5])
-                cylinder(h=as_thick+eps, d=as_hole_dia);
-            translate([as_width-off, as_length-off, -eps*0.5])
-                cylinder(h=as_thick+eps, d=as_hole_dia);
-        }
+        translate([0, 0, -eps*0.5])
+            as5600_holes(as_thick+eps, as_hole_dia, off);
+    }
+}
+
+module as5600_cradle() {
+    gap = 2 + eps;
+    difference() {
+        translate([-1, -1, 0]) 
+            cube([as_width+gap, as_length+gap, as_thick], center=false);
+        cube([as_width, as_length, as_thick+2*gap], center=false);
     }
 }
 
@@ -119,19 +147,31 @@ module mcu_micro_pro() {
           color("#000000") cube([7, 7, chip_thick+chip_thick], center=true);
 }
 
+module mcu_micro_pro_cradle() {
+    gap = 2 + eps;
+    difference() {
+        translate([-1, -1, 0]) 
+            cube([cpu_width+gap, cpu_length+gap, cpu_thick], center=false);
+        cube([cpu_width, cpu_length, cpu_thick+2*gap], center=false);
+    }
+}
+
+module cap_holes(depth, dia) {
+    translate([bearing_dia*0.5+4, 4, 0])
+        cylinder(h=depth, d=dia);
+    translate([-bearing_dia*0.5-4, 4, 0])
+        cylinder(h=depth, d=dia);
+    translate([bearing_dia*0.5+4, -4, 0])
+        cylinder(h=depth, d=dia);
+    translate([-bearing_dia*0.5-4, -4, 0])
+        cylinder(h=depth, d=dia);
+}
+
 module caps(block=0) {
     difference() {
         cap(block);
-        union() {
-            translate([bearing_dia*0.5+4, 4, -eps*0.5])
-                cylinder(h=cap_thick+eps, d=screw_dia);
-            translate([-bearing_dia*0.5-4, 4, -eps*0.5])
-                cylinder(h=cap_thick+eps, d=screw_dia);
-           translate([bearing_dia*0.5+4, -4, -eps*0.5])
-                cylinder(h=cap_thick+eps, d=screw_dia);
-            translate([-bearing_dia*0.5-4, -4, -eps*0.5])
-                cylinder(h=cap_thick+eps, d=screw_dia);
-        }
+        translate([0, 0, -eps*0.5])
+            cap_holes(cap_thick+eps, m3_hole_dia);
     }
 }
 
@@ -161,12 +201,15 @@ module top() {
             translate([offset, offset, -eps]) {
                 cylinder(h=20, d=core_dia+eps*2);
                 cylinder(h=wall_thick, d=bearing_dia+eps*2);
+                translate([0, 0, -eps*0.5])
+                    cap_holes(cap_thick+eps, m3_thread_dia);
             }
         } 
     }
 }
 
 module base() {
+    off = 1.75 + as_hole_dia*0.5;
     difference() {
         color("#edbd5f") cube([box_width, box_length, box_depth], center=false);
         union() {
@@ -175,12 +218,26 @@ module base() {
                       box_length-2*wall_thick, 
                       box_depth-wall_thick], center=false);
             }
+            // Pushbutton hole
             translate([wall_thick*1.5, box_length-wall_thick*3, box_depth*0.5])
                 rotate(-90,[0,1,0]) 
                     cylinder(h=wall_thick*2, d=btn_hole_dia);
+            // USB hole
             translate([(box_width-usb_width)*0.5, -eps, wall_thick+cpu_thick]) 
                 cube([usb_width,wall_thick+2*eps,usb_thick],center=false);
+                    translate([0, 0, -eps*0.5])
+            // as5600 mounting holes
+            translate([(box_width-as_width)*0.5,box_length-1.5*as_length,0.5])
+                as5600_holes(wall_thick*2, m3_thread_dia, off);
         }
+    }
+    translate([(box_width-as_width)*0.5,
+                box_length-1.5*as_length,
+                wall_thick-eps]) {
+        color("#edbd5f") as5600_cradle();
+    }
+    translate([(box_width-cpu_width)*0.5, wall_thick ,wall_thick-eps]) {
+        color("#edbd5f") mcu_micro_pro_cradle();
     }
 }
 
