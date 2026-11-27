@@ -27,6 +27,8 @@
 quality = 200; // [10:200]
 
 /* [Common] */
+// Include component models
+include_components = 1; // [0:Off, 1:On]
 // General EPS (mm)
 eps = 0.2; // Insets used for looser fits
 // Wall thicknesses (mm)
@@ -39,6 +41,8 @@ btn_hole_dia = 7.0;
 m3_hole_dia = 3.3;
 // M3 screw thread hole diameter (mm)
 m3_thread_dia = 2.9;
+// Magnet gap
+magnet_gap = 0.93;  // Gap: bottom of magnet to hall effect chip top
 
 /* [Holding box] */
 // width (mm)
@@ -47,6 +51,7 @@ box_width = 50;
 box_length = 80;
 // depth (mm)
 box_depth = 30;
+
 
 /* [MCU] */
 // CPU width
@@ -67,12 +72,18 @@ as_width = 23.28;
 as_length = 22.85;
 // Holes
 as_hole_dia = 3.63;
-// Thick
-as_thick = 1.58;
+// PCB Thick
+as_pcb_thick = 1.58;
+// Magnet diameter
+as_mag_dia = 3.93;
+// Magnet thickness
+as_mag_thick = 1.93;
 
 /* [Core] */
 // Core diameter
 core_dia = 12.0;
+// Core top height
+core_top_height = 12.0;
 // Bearing diameter
 bearing_dia = 16;
 // Axel diameter
@@ -122,12 +133,12 @@ module as5600() {
     off = 1.75 + as_hole_dia*0.5;
     difference() {
         union() {
-            color("#ffffff") cube([as_width, as_length, as_thick], center=false);
-            translate([as_width/2, as_length/2, as_thick])
+            color("#ffffff") cube([as_width, as_length, as_pcb_thick], center=false);
+            translate([as_width/2, as_length/2, as_pcb_thick])
                 color("#000000") cube([5, 5, chip_thick+chip_thick], center=true);
         }
         translate([0, 0, -eps*0.5])
-            as5600_holes(as_thick+eps, as_hole_dia, off);
+            as5600_holes(as_pcb_thick+eps, as_hole_dia, off);
     }
 }
 
@@ -135,14 +146,14 @@ module as5600_cradle() {
     gap = 2 + eps;
     difference() {
         translate([-1, -1, 0]) 
-            cube([as_width+gap, as_length+gap, as_thick], center=false);
-        cube([as_width, as_length, as_thick+2*gap], center=false);
+            cube([as_width+gap, as_length+gap, as_pcb_thick], center=false);
+        cube([as_width, as_length, as_pcb_thick+2*gap], center=false);
     }
 }
 
 module mcu_micro_pro() {
     color("#00cc00") cube([cpu_width, cpu_length, cpu_thick], center=false);
-    translate([cpu_width/2, cpu_length/2 - 3, as_thick])
+    translate([cpu_width/2, cpu_length/2 - 3, as_pcb_thick])
        rotate(a=45,[0,0,1])
           color("#000000") cube([7, 7, chip_thick+chip_thick], center=true);
 }
@@ -185,6 +196,42 @@ module cap(block=0) {
             }
         } else {
             pie(cap_thick, core_dia*0.5, (bearing_dia+6)*0.5+5, 180, 360);
+        }
+    }
+}
+
+module core_top() {
+    // 12mm hex (D = 1.1547*F)
+    d = 1.1547 * 12;
+    difference() {
+        union() {
+            cylinder(h=core_top_height, d=core_dia-eps);
+            translate([0,0,core_top_height-eps]) 
+                cylinder(d=d-eps, h=5, $fn=6);
+        }
+        union() {
+            translate([0,0,-0.5*eps]) cylinder(h=5+eps, d=axel_dia+eps);
+            translate([0,0,core_top_height-1]) cylinder(h=6+eps, d=m3_thread_dia);
+        }
+    }
+
+    
+}
+
+module core_bot() {
+    // Compute for magnet clearance
+    // box_depth = wall_thick+as_pcb_thick+chip_thick+magnet_gap+h
+    h = box_depth - (wall_thick+as_pcb_thick+chip_thick+magnet_gap);  
+    difference() {
+        union() {
+            cylinder(h=h, d=core_dia-eps);
+            translate([0,0,h-cap_thick-wall_thick-2])
+                    pie(wall_thick, core_dia*0.5-2*eps, (bearing_dia+6)*0.5, 65, 115);
+        }
+        union() {
+            translate([0,0,h-5]) cylinder(h=5+eps, d=axel_dia+eps);
+            // Magnet
+            cylinder(h=as_mag_thick, d=as_mag_dia+eps);
         }
     }
 }
@@ -244,13 +291,17 @@ module base() {
 
 union() {
     top();
-    translate([0,-60,0]) caps(0);
-    translate([0,-50,0]) caps(1);
+    translate([20,-60,0]) caps(0);
+    translate([20,-50,0]) caps(1);
+    translate([60,-60,0]) color("#fc9003") core_top();
+    translate([60,-20,0]) color("#fc9003") core_bot();
     translate([100,0,0]) {
         base();
-        translate([(box_width-cpu_width)*0.5, wall_thick ,wall_thick]) 
-            mcu_micro_pro();
-        translate([(box_width-as_width)*0.5,box_length-1.5*as_length,wall_thick])
-            as5600();
+        if (include_components) {
+            translate([(box_width-cpu_width)*0.5, wall_thick ,wall_thick]) 
+                mcu_micro_pro();
+            translate([(box_width-as_width)*0.5,box_length-1.5*as_length,wall_thick])
+                as5600();
+        }
     }
 }
